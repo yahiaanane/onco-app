@@ -1,0 +1,135 @@
+Patients Page — Functional Update (Behavior-Only Spec)
+Goals
+
+Enhance the Patients page with quick actions and complete patient flows:
+
+Delete patient
+
+View details
+
+Edit patient
+
+Add labs
+
+Assign protocol
+
+Patients List (table or cards)
+
+Each patient row/card shows: name, age, cancer type, stage, last update.
+
+Add an Actions cluster with buttons:
+
+View Details
+
+Edit
+
+Add Labs
+
+Assign Protocol
+
+Delete (trash icon)
+
+Delete
+
+Click Delete → confirmation dialog:
+“Delete patient ‘{name}’? This cannot be undone.”
+
+On confirm: remove the patient from the list.
+
+If deletion fails: show a visible error message; do not remove the row.
+
+View Details
+
+Click View Details → open a Patient Details view.
+
+Patient Details has tabs:
+
+Overview: demographics, cancer details, metastasis list, notes.
+
+Protocols: list of patient protocols (title, status, start/end, adherence %).
+
+Labs: table of lab results and trend charts (select markers and date range).
+
+Timeline: chronological log of major actions (created, edited, labs added, protocol changes).
+
+Returning from details brings user back to the previous list state (filters, search, scroll).
+
+Edit
+
+Click Edit → open an Edit Patient form pre-filled with existing data.
+
+Fields: name, email, phone, date of birth, sex, height, weight (auto-calc BMI), cancer type, stage, diagnosis date, metastasis locations (multiple), notes.
+
+Save updates the patient and closes the form; show success message and refresh the row/details.
+
+Cancel closes without changes.
+
+Add Labs
+
+Click Add Labs → open Add Lab Results dialog.
+
+Inputs per lab:
+
+Marker (select from a preloaded catalog of blood markers)
+
+Date
+
+Value
+
+Notes (optional)
+
+The marker selection displays its unit and reference range.
+
+Allow adding multiple lab entries before saving (“Add another”).
+
+Save adds all entries; show success message; if on details view, refresh the Labs tab and charts.
+
+Assign Protocol
+
+Click Assign Protocol → open Assign Protocol dialog with two options:
+
+From Template: choose an existing template; preview items; optionally adjust per-patient before saving.
+
+Custom: enter a protocol title and add items manually.
+
+Protocol item fields: type (supplement/drug/lifestyle), name, dose, unit, frequency, timing notes, rationale, cautions.
+
+Save creates an active protocol for the patient and generates daily checklist items for adherence.
+
+After saving: show success and make the protocol visible in the patient’s Protocols tab.
+
+Labs Catalog (preloaded)
+
+A modifiable list of blood markers available in the Labs page (e.g., CRP, LDH, AFP, Glucose, Insulin, Vitamin D, Ferritin, HbA1c).
+
+Each marker: name, unit, reference range (low/high).
+
+Validation & Messages
+
+Required fields must be clearly indicated and validated.
+
+Show clear success toasts after create/update/delete actions.
+
+Show clear error messages if an action fails; keep user input intact for retry.
+
+Accessibility & UX
+
+Buttons include clear labels or accessible names (e.g., “Delete patient”).
+
+Modals trap focus and can be closed safely; disable submit while saving.
+
+Loading states are visible during long actions.
+
+Acceptance Criteria
+
+Delete removes the selected patient only after confirmation; errors are surfaced without losing list state.
+
+View Details shows correct data across Overview, Protocols, Labs, Timeline; back navigation preserves list filters/scroll.
+
+Edit updates any patient field; changes reflect immediately in list and details.
+
+Add Labs allows multiple entries in one action; markers show unit and ranges; saved labs appear in the patient’s Labs list and charts.
+
+Assign Protocol supports both template-based and custom protocols; saved protocol appears in Protocols tab with items and adherence checklist generated.
+
+All actions provide visible success/error feedback and remain usable without page reloads.
