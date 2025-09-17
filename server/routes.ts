@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
++import { insertPatientProtocolSchema } from "@shared/schema";
 import { 
   insertPatientSchema,
   insertProtocolTemplateSchema,
@@ -44,18 +45,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/patients", async (req, res) => {
-    try {
-      const patientData = insertPatientSchema.parse(req.body);
-      const patient = await storage.createPatient(patientData);
-      res.status(201).json(patient);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid patient data", errors: error.errors });
+app.post("/api/patient-protocols", async (req, res) => {
+  try {
+    const { patientId, templateId } = req.body ?? {};
+
+    // Helper: normalize to Date (handles string or Date or missing)
+    const toDate = (v: unknown) => {
+      if (v instanceof Date) return v;
+      if (typeof v === "string") return new Date(v);
+      return new Date();
+    };
+
+    // Path A: assigning from a template with a minimal payload
+    if (templateId) {
+      if (!patientId) {
+        return res.status(400).json({
+          message: "Invalid protocol data",
+          errors: [{ path: ["patientId"], message: "patientId is required" }],
+        });
       }
-      res.status(500).json({ message: "Failed to create patient" });
+
+      const tpl = await storage.getProtocolTemplate(templateId);
+      if (!tpl) return res.status(404).json({ message: "Protocol template not found" });
+
+      const startDate = toDate(req.body?.startDate ?? new Date());
+
+      // Build a complete payload with sensible defaults
+      const candidate = {
+        patientId,
+        templateId,
+        name: req.body?.name ?? tpl.name,
+        status: req.body?.status ?? "active",
+        startDate,
+        endDate: req.body?.endDate ? toDate(req.body.endDate) : null,
+      };
+
+      // Try strict validation; if Zod is picky about Date, we already coerced it
+      let protocolData = candidate as any;
+      try {
+        protocolData = insertPatientProtocolSchema.parse(candidate);
+      } catch {
+        // fall back to our normalized candidate
+      }
+
+      // Create patient protocol
+      const protocol = await storage.createPatientProtocol(protocolData);
+
+      // Copy template items into this patient's protocol
+      const tplItems = await storage.getProtocolItems(templateId);
+      for (const it of tplItems) {
+        await storage.createPatientProtocolItem({
+          patientProtocolId: protocol.id,
+          name: it.name,
+          type: it.type,
+          category: it.category,
+          priority: it.priority ?? "core",
+          dosage: it.dosage ?? null,
+          frequency: it.frequency ?? null,
+          timing: it.timing ?? null,
+          duration: it.duration ?? null,
+          rationale: it.rationale ?? null,
+          cautions: it.cautions ?? null,
+          instructions: it.instructions ?? null,
+          foodRequirement: it.foodRequirement ?? null,
+          order: it.order ?? 0,
+        });
+      }
+
+      return res.status(201).json(protocol);
     }
-  });
+
+    // Path B: custom protocol creation (expects full fields)
+    const protocolData = insertPatientProtocolSchema.parse({
+      ...req.body,
+      startDate: toDate(req.body?.startDate ?? new Date()),
+      endDate: req.body?.endDate ? toDate(req.body.endDate) : null,
+    });
+    const protocol = await storage.createPatientProtocol(protocolData);
+
+    // If custom items[] provided, create them too
+    if (Array.isArray(req.body?.items)) {
+      for (const it of req.body.items) {
+        await storage.createPatientProtocolItem({
+          patientProtocolId: protocol.id,
+          name: it.name,
+          type: it.type,
+          category: it.category,
+          priority: it.priority ?? "core",
+          dosage: it.dosage ?? null,
+          frequency: it.frequency ?? null,
+          timing: it.timing ?? null,
+          duration: it.duration ?? null,
+          rationale: it.rationale ?? null,
+          cautions: it.cautions ?? null,
+          instructions: it.instructions ?? null,
+          foodRequirement: it.foodRequirement ?? null,
+          order: it.order ?? 0,
+        });
+      }
+    }
+
+    return res.status(201).json(protocol);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Invalid protocol data", errors: error.errors });
+    }
+    console.error("Assign protocol failed:", (error as Error).message);
+    return res.status(500).json({ message: "Failed to assign protocol" });
+  }
+});
 
   app.put("/api/patients/:id", async (req, res) => {
     try {
