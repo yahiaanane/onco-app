@@ -58,6 +58,50 @@ export default function PatientDetailsDialog({
     },
   });
 
+  // Which protocol we're editing
+const [editProtocolId, setEditProtocolId] = useState<string | null>(null);
+
+// Load items for the dialog
+const { data: editItems } = useQuery({
+  queryKey: ["/api/patient-protocols/items", editProtocolId],
+  enabled: !!editProtocolId,
+  queryFn: async () => {
+    const res = await apiRequest("GET", `/api/patient-protocols/${editProtocolId}/items`);
+    return res.json() as Promise<any[]>;
+  },
+});
+
+  const addItemMutation = useMutation({
+  mutationFn: async (payload: any) => {
+    const res = await apiRequest("POST", "/api/patient-protocol-items", payload);
+    return res.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/patient-protocols/items", editProtocolId] });
+  },
+});
+
+const updateItemMutation = useMutation({
+  mutationFn: async ({ id, data }: { id: string; data: any }) => {
+    const res = await apiRequest("PUT", `/api/patient-protocol-items/${id}`, data);
+    return res.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/patient-protocols/items", editProtocolId] });
+  },
+});
+
+const deleteItemMutation = useMutation({
+  mutationFn: async (id: string) => {
+    const res = await apiRequest("DELETE", `/api/patient-protocol-items/${id}`);
+    return res.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/patient-protocols/items", editProtocolId] });
+  },
+});
+
+  
   const deletePatientProtocolMutation = useMutation({
   mutationFn: async (protocolId: string) => {
     const response = await apiRequest("DELETE", `/api/patient-protocols/${protocolId}`);
@@ -354,6 +398,13 @@ const unassignProtocol = useMutation({
                           >
                             Unassign
                           </Button> 
+                           <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditProtocolId(protocol.id)}
+                            >
+                              Edit
+                            </Button> 
                           </div>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">
