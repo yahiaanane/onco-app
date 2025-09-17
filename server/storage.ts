@@ -64,21 +64,7 @@ export interface IStorage {
   getPatientProtocol(id: string): Promise<PatientProtocol | undefined>;
   createPatientProtocol(protocol: InsertPatientProtocol): Promise<PatientProtocol>;
   updatePatientProtocol(id: string, protocol: Partial<InsertPatientProtocol>): Promise<PatientProtocol | undefined>;
-  
-  async deletePatientProtocol(id: string): Promise<boolean> {
-  const result = await db.delete(patientProtocols).where(eq(patientProtocols.id, id));
-  return (result.rowCount ?? 0) > 0;
-}
-
-// Unassign a protocol from a patient (does NOT delete the template)
-async deletePatientProtocol(id: string): Promise<boolean> {
-  // rely on ON DELETE CASCADE for related items/adherence (your schema uses cascade)
-  const deleted = await db
-    .delete(patientProtocols)
-    .where(eq(patientProtocols.id, id))
-    .returning({ id: patientProtocols.id }); // Drizzle returns rows; length > 0 means success
-  return deleted.length > 0;
-}
+  deletePatientProtocol(id: string): Promise<boolean>;
 
   // Patient protocol item methods
   getPatientProtocolItems(patientProtocolId: string): Promise<PatientProtocolItem[]>;
