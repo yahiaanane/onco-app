@@ -3,7 +3,17 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+app.disable("etag"); 
+
 app.use(express.json());
+
+
+app.use("/api", (_req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
+
 app.use(express.urlencoded({ extended: false }));
 
 app.use((req, res, next) => {
