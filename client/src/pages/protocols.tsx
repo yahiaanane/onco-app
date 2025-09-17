@@ -316,13 +316,6 @@ const [newFrequency, setNewFrequency] = useState("");
     return new Date(dateString).toLocaleDateString();
   };
   if (patientProtocolId) {
-  // quick-add local state (uses already-imported Input/Select/Button)
-  const [newName, setNewName] = useState("");
-  const [newType, setNewType] = useState<"supplement" | "drug" | "lifestyle">("supplement");
-  const [newDosage, setNewDosage] = useState("");
-  const [newFrequency, setNewFrequency] = useState("");
-
-  const formatDate = (d: string | Date) => new Date(d).toLocaleDateString();
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
