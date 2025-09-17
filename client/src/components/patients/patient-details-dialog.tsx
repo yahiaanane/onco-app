@@ -58,6 +58,26 @@ export default function PatientDetailsDialog({
     },
   });
 
+  const deletePatientProtocolMutation = useMutation({
+  mutationFn: async (protocolId: string) => {
+    const response = await apiRequest("DELETE", `/api/patient-protocols/${protocolId}`);
+    return response.json();
+  },
+  onSuccess: () => {
+    // refresh just this patient's protocols + dashboards/timeline
+    queryClient.invalidateQueries({ queryKey: ["/api/patient-protocols", patient?.id] });
+    queryClient.invalidateQueries({ queryKey: ["/api/timeline", patient?.id] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/adherence"] });
+    // If you use toasts in this file already:
+    // toast({ title: "Unassigned", description: "Protocol removed for this patient." });
+  },
+  onError: () => {
+    // toast({ title: "Error", description: "Failed to unassign protocol", variant: "destructive" });
+    alert("Failed to unassign protocol");
+  },
+});
+  
   const { data: labTests } = useQuery<LabTest[]>({
     queryKey: [`/api/patients/${patient?.id}/labs`],
     enabled: !!patient?.id && open,
@@ -67,6 +87,36 @@ export default function PatientDetailsDialog({
     queryKey: ["/api/patient-protocols", patient?.id],
     enabled: !!patient?.id && open,
   });
+
+  // ——— add below your other hooks ———
+const [viewProtocolId, setViewProtocolId] = useState<string | null>(null);
+
+const { data: viewDetails } = useQuery({
+  queryKey: ["/api/patient-protocols/details", viewProtocolId],
+  enabled: !!viewProtocolId,
+  queryFn: async () => {
+    const res = await fetch(`/api/patient-protocols/${viewProtocolId}/details`);
+    if (!res.ok) throw new Error("Failed to load protocol details");
+    return res.json() as Promise<{ protocol: PatientProtocol; items: any[] }>;
+  },
+});
+
+const unassignProtocol = useMutation({
+  mutationFn: async (protocolId: string) => {
+    const res = await fetch(`/api/patient-protocols/${protocolId}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Failed to unassign protocol");
+    return res.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/patient-protocols", patient.id] });
+    toast?.({ title: "Unassigned", description: "Protocol removed for this patient." });
+  },
+  onError: (e: any) => {
+    const msg = e?.message ?? "Unassign failed";
+    toast?.({ title: "Error", description: msg, variant: "destructive" }) ?? alert(msg);
+  },
+});
+  
 
   const { data: timeline } = useQuery<TimelineEntry[]>({
     queryKey: ["/api/timeline", patient?.id],
