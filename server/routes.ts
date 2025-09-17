@@ -376,7 +376,31 @@ app.delete("/api/patient-protocols/:protocolId", async (req, res) => {
       res.status(500).json({ message: "Failed to create protocol item" });
     }
   });
+  app.put("/api/patient-protocol-items/:itemId", async (req, res) => {
+  try {
+    // allow partial updates (name, dosage, frequency, timing, etc.)
+    const partialSchema = insertPatientProtocolItemSchema.partial();
+    const updateData = partialSchema.parse(req.body);
 
+    const item = await storage.updatePatientProtocolItem(req.params.itemId, updateData);
+    if (!item) return res.status(404).json({ message: "Protocol item not found" });
+    res.json(item);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Invalid item data", errors: error.errors });
+    }
+    res.status(500).json({ message: "Failed to update protocol item" });
+  }
+});
+  app.delete("/api/patient-protocol-items/:itemId", async (req, res) => {
+  try {
+    const ok = await storage.deletePatientProtocolItem(req.params.itemId);
+    if (!ok) return res.status(404).json({ message: "Protocol item not found" });
+    res.json({ message: "Protocol item deleted" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete protocol item" });
+  }
+});
   // Adherence routes
   app.get("/api/adherence/:itemId", async (req, res) => {
     try {
