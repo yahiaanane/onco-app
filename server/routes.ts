@@ -343,6 +343,17 @@ app.get("/api/patient-protocols/:patientId", async (req, res) => {
     }
   });
 
+  // Delete a patient’s protocol assignment (does NOT delete the template)
+app.delete("/api/patient-protocols/:protocolId", async (req, res) => {
+  try {
+    const ok = await storage.deletePatientProtocol(req.params.protocolId);
+    if (!ok) return res.status(404).json({ message: "Protocol not found" });
+    res.json({ message: "Protocol unassigned" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to unassign protocol" });
+  }
+});
+  
   // Patient protocol items routes
   app.get("/api/patient-protocols/:protocolId/items", async (req, res) => {
     try {
