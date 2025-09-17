@@ -13,8 +13,8 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Patient, LabTest, PatientProtocol, TimelineEntry } from "@shared/schema";
 import { Input } from "@/components/ui/input";
-import { useNavigate } from "react-router-dom";
 
+import { Link } from "react-router-dom";
 
 interface PatientDetailsDialogProps {
   patient: Patient | null;
@@ -432,13 +432,11 @@ const unassignProtocol = useMutation({
                           >
                             Unassign
                           </Button> 
-                           <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => navigate(`/protocols?patientProtocolId=${protocol.id}`)}
-                              >
-                                View
-                              </Button>
+                          <Button variant="outline" size="sm" asChild>
+                          <Link to={`/protocols?patientProtocolId=${protocol.id}`}>
+                            View
+                          </Link>
+                        </Button>
                           </div>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">
