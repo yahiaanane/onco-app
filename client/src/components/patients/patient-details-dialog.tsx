@@ -12,6 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Patient, LabTest, PatientProtocol, TimelineEntry } from "@shared/schema";
+import { Input } from "@/components/ui/input";
 
 interface PatientDetailsDialogProps {
   patient: Patient | null;
@@ -20,7 +21,38 @@ interface PatientDetailsDialogProps {
   onAddLab?: (patient: Patient) => void;
   onAssignProtocol?: (patient: Patient) => void;
 }
+function EditAddRow({ onAdd }: { onAdd: (payload: any) => void }) {
+  const [name, setName] = useState("");
+  const [type, setType] = useState<"supplement" | "drug" | "lifestyle">("supplement");
+  const [dosage, setDosage] = useState("");
+  const [frequency, setFrequency] = useState("");
 
+  return (
+    <div className="flex items-center gap-2">
+      <Input placeholder="name" value={name} onChange={(e) => setName(e.target.value)} className="w-64" />
+      <Select value={type} onValueChange={(v) => setType(v as any)}>
+        <SelectTrigger className="w-36"><SelectValue placeholder="type" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="supplement">Supplement</SelectItem>
+          <SelectItem value="drug">Drug</SelectItem>
+          <SelectItem value="lifestyle">Lifestyle</SelectItem>
+        </SelectContent>
+      </Select>
+      <Input placeholder="dosage" value={dosage} onChange={(e) => setDosage(e.target.value)} className="w-40" />
+      <Input placeholder="frequency" value={frequency} onChange={(e) => setFrequency(e.target.value)} className="w-40" />
+      <Button
+        size="sm"
+        onClick={() => {
+          if (!name.trim()) return;
+          onAdd({ name, type, dosage, frequency });
+          setName(""); setDosage(""); setFrequency("");
+        }}
+      >
+        Add
+      </Button>
+    </div>
+  );
+}
 export default function PatientDetailsDialog({ 
   patient, 
   open, 
@@ -527,6 +559,82 @@ const unassignProtocol = useMutation({
             </TabsContent>
           </div>
         </Tabs>
+        <Dialog open={!!editProtocolId} onOpenChange={(o) => !o && setEditProtocolId(null)}>
+  <DialogContent className="max-w-3xl">
+    <DialogHeader>
+      <DialogTitle>Edit Protocol Items</DialogTitle>
+    </DialogHeader>
+
+    {/* Items list */}
+    <div className="space-y-3 max-h-[50vh] overflow-auto">
+      {(!editItems || editItems.length === 0) ? (
+        <p className="text-sm text-muted-foreground">No items yet.</p>
+      ) : (
+        editItems.map((it: any) => (
+          <div key={it.id} className="flex items-center gap-2 text-sm">
+            <Input
+              defaultValue={it.name}
+              onBlur={(e) =>
+                e.target.value !== it.name &&
+                updateItemMutation.mutate({ id: it.id, data: { name: e.target.value } })
+              }
+              className="w-64"
+            />
+            <Input
+              placeholder="dosage"
+              defaultValue={it.dosage ?? ""}
+              onBlur={(e) =>
+                (e.target.value ?? "") !== (it.dosage ?? "") &&
+                updateItemMutation.mutate({ id: it.id, data: { dosage: e.target.value || null } })
+              }
+              className="w-40"
+            />
+            <Input
+              placeholder="frequency"
+              defaultValue={it.frequency ?? ""}
+              onBlur={(e) =>
+                (e.target.value ?? "") !== (it.frequency ?? "") &&
+                updateItemMutation.mutate({ id: it.id, data: { frequency: e.target.value || null } })
+              }
+              className="w-40"
+            />
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                if (confirm("Remove this recommendation for this patient?")) {
+                  deleteItemMutation.mutate(it.id);
+                }
+              }}
+            >
+              Remove
+            </Button>
+          </div>
+        ))
+      )}
+    </div>
+
+    <Separator className="my-3" />
+
+    {/* Quick add row */}
+    <EditAddRow
+      onAdd={(payload) =>
+        addItemMutation.mutate({
+          patientProtocolId: editProtocolId,
+          name: payload.name,
+          type: payload.type, // 'supplement' | 'drug' | 'lifestyle'
+          dosage: payload.dosage || null,
+          frequency: payload.frequency || null,
+          timing: payload.timing || null,
+          duration: payload.duration || null,
+          category: payload.category || null,
+          priority: payload.priority || "core",
+          order: payload.order ?? 0,
+        })
+      }
+    />
+  </DialogContent>
+</Dialog>
       </DialogContent>
     </Dialog>
   );
