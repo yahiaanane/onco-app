@@ -432,11 +432,12 @@ const unassignProtocol = useMutation({
                           >
                             Unassign
                           </Button> 
-                          <Button variant="outline" size="sm" asChild>
-                          <Link to={`/protocols?patientProtocolId=${protocol.id}`}>
-                            View
-                          </Link>
-                        </Button>
+<Link
+  to={`/protocols?patientProtocolId=${protocol.id}`}
+  className="inline-flex items-center rounded-md border px-3 py-2 text-sm"
+>
+  View
+</Link>
                           </div>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">
