@@ -70,7 +70,7 @@ export interface IStorage {
   getPatientProtocolItems(patientProtocolId: string): Promise<PatientProtocolItem[]>;
   createPatientProtocolItem(item: InsertPatientProtocolItem): Promise<PatientProtocolItem>;
   updatePatientProtocolItem(id: string, item: Partial<InsertPatientProtocolItem>): Promise<PatientProtocolItem | undefined>;
-
+  deletePatientProtocolItem(id: string): Promise<boolean>;
   // Adherence methods
   getAdherenceRecords(patientProtocolItemId: string, startDate?: string, endDate?: string): Promise<AdherenceRecord[]>;
   createAdherenceRecord(record: InsertAdherenceRecord): Promise<AdherenceRecord>;
@@ -298,7 +298,13 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return item || undefined;
   }
-
+  async deletePatientProtocolItem(id: string): Promise<boolean> {
+  const deleted = await db
+    .delete(patientProtocolItems)
+    .where(eq(patientProtocolItems.id, id))
+    .returning({ id: patientProtocolItems.id });
+  return deleted.length > 0;
+}
   // Adherence methods
   async getAdherenceRecords(patientProtocolItemId: string, startDate?: string, endDate?: string): Promise<AdherenceRecord[]> {
     if (startDate && endDate) {
