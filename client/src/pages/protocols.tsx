@@ -15,6 +15,7 @@ import { ClipboardList, Edit, Trash, Plus, Eye, Search, Filter, Package, Activit
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ProtocolTemplate, InsertProtocolTemplate, ProtocolItem, InsertProtocolItem } from "@shared/schema";
+import { apiRequest } from "@/lib/api";
 
 export default function Protocols() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -34,6 +35,86 @@ const patientProtocolId =
   typeof window !== "undefined"
     ? new URLSearchParams(window.location.search).get("patientProtocolId")
     : null;
+const isPatientMode = Boolean(patientProtocolId);
+
+const queryClient = useQueryClient();
+
+// Load the patient protocol + its items when in patient mode
+const { data: patientProtocol } = useQuery({
+  queryKey: ["/api/patient-protocols", patientProtocolId],
+  enabled: isPatientMode,
+  queryFn: async () => {
+    const res = await apiRequest("GET", `/api/patient-protocols/${patientProtocolId}`);
+    return res.json();
+  },
+});
+
+const { data: patientItems } = useQuery({
+  queryKey: ["/api/patient-protocols/items", patientProtocolId],
+  enabled: isPatientMode,
+  queryFn: async () => {
+    const res = await apiRequest("GET", `/api/patient-protocols/${patientProtocolId}/items`);
+    return res.json();
+  },
+});
+
+// Fetch patient to display name in title
+const { data: patient } = useQuery({
+  queryKey: ["/api/patients", patientProtocol?.patientId],
+  enabled: isPatientMode && !!patientProtocol?.patientId,
+  queryFn: async () => {
+    const res = await apiRequest("GET", `/api/patients/${patientProtocol!.patientId}`);
+    return res.json();
+  },
+});
+
+// Mutations for patient-specific items
+const addPatientItem = useMutation({
+  mutationFn: async (payload: any) => {
+    const res = await apiRequest("POST", "/api/patient-protocol-items", {
+      patientProtocolId,
+      name: payload.name,
+      type: payload.type ?? "supplement",
+      dosage: payload.dosage ?? null,
+      frequency: payload.frequency ?? null,
+      timing: payload.timing ?? null,
+      duration: payload.duration ?? null,
+      category: payload.category ?? null,
+      priority: payload.priority ?? "core",
+      order: payload.order ?? 0,
+    });
+    return res.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/patient-protocols/items", patientProtocolId] });
+  },
+});
+
+const updatePatientItem = useMutation({
+  mutationFn: async ({ id, data }: { id: string; data: any }) => {
+    const res = await apiRequest("PUT", `/api/patient-protocol-items/${id}`, data);
+    return res.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/patient-protocols/items", patientProtocolId] });
+  },
+});
+
+const deletePatientItem = useMutation({
+  mutationFn: async (id: string) => {
+    const res = await apiRequest("DELETE", `/api/patient-protocol-items/${id}`);
+    return res.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/patient-protocols/items", patientProtocolId] });
+  },
+});
+
+// Quick-add state (must be top-level hooks)
+const [newName, setNewName] = useState("");
+const [newType, setNewType] = useState<"supplement" | "drug" | "lifestyle">("supplement");
+const [newDosage, setNewDosage] = useState("");
+const [newFrequency, setNewFrequency] = useState("");
 
 // Load the patient protocol + items when in patient mode
 const { data: patientProtocol } = useQuery({
