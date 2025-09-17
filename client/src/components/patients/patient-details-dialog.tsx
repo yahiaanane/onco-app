@@ -432,15 +432,7 @@ const unassignProtocol = useMutation({
                           >
                             Unassign
                           </Button> 
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              window.location.href = `/protocols?patientProtocolId=${protocol.id}`;
-                            }}
-                          >
-                            View
-                          </Button>
+     
                           </div>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">
