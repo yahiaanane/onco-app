@@ -271,7 +271,14 @@ export class DatabaseStorage implements IStorage {
 
     return protocol || undefined;
   }
-  
+    // ⬇️ INSERTED METHOD (inside class, after updatePatientProtocol)
+  async deletePatientProtocol(id: string): Promise<boolean> {
+    const deleted = await db
+      .delete(patientProtocols)
+      .where(eq(patientProtocols.id, id))
+      .returning({ id: patientProtocols.id }); // rows returned ⇒ deleted
+    return deleted.length > 0;
+  }
 
   // Patient protocol item methods
   async getPatientProtocolItems(patientProtocolId: string): Promise<PatientProtocolItem[]> {
