@@ -306,7 +306,17 @@ app.post("/api/patient-protocols", async (req, res) => {
       res.status(500).json({ message: "Failed to fetch patient protocols" });
     }
   });
+  
 
+app.get("/api/patient-protocols/:patientId", async (req, res) => {
+  try {
+    const protocols = await storage.getPatientProtocols(req.params.patientId);
+    res.json(protocols);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch patient protocols" });
+  }
+});
+  
   app.post("/api/patient-protocols", async (req, res) => {
     try {
       const protocolData = insertPatientProtocolSchema.parse(req.body);
