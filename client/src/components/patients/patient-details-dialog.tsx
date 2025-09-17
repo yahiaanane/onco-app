@@ -343,6 +343,17 @@ const unassignProtocol = useMutation({
                                 <SelectItem value="completed">Completed</SelectItem>
                               </SelectContent>
                             </Select>
+                            <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              if (confirm("Unassign this protocol from the patient?")) {
+                                deletePatientProtocolMutation.mutate(protocol.id);
+                              }
+                            }}
+                          >
+                            Unassign
+                          </Button> 
                           </div>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">
