@@ -256,18 +256,35 @@ app.post("/api/patient-protocols", async (req, res) => {
     }
   });
 
-  app.post("/api/protocol-items", async (req, res) => {
-    try {
-      const itemData = insertProtocolItemSchema.parse(req.body);
-      const item = await storage.createProtocolItem(itemData);
-      res.status(201).json(item);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid item data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to create protocol item" });
+  app.post("/api/patient-protocol-items", async (req, res) => {
+  try {
+    const body = req.body ?? {};
+    const candidate = {
+      patientProtocolId: body.patientProtocolId,
+      name: body.name,
+      type: body.type ?? "supplement",
+      category: body.category ?? null,
+      priority: body.priority ?? "core",
+      dosage: body.dosage ?? null,
+      frequency: body.frequency ?? null,
+      timing: body.timing ?? null,
+      duration: body.duration ?? null,
+      rationale: body.rationale ?? null,
+      cautions: body.cautions ?? null,
+      instructions: body.instructions ?? null,
+      foodRequirement: body.foodRequirement ?? null,
+      order: body.order ?? 0,
+    };
+    const itemData = insertPatientProtocolItemSchema.parse(candidate);
+    const item = await storage.createPatientProtocolItem(itemData);
+    res.status(201).json(item);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Invalid item data", errors: error.errors });
     }
-  });
+    res.status(500).json({ message: "Failed to create protocol item" });
+  }
+});
 
   app.patch("/api/protocol-items/:id", async (req, res) => {
     try {
