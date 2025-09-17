@@ -165,7 +165,7 @@ const deleteItemMutation = useMutation({
     queryKey: ["/api/patient-protocols", patient?.id],
     enabled: !!patient?.id && open,
   });
-
+const navigate = useNavigate();
   // ——— add below your other hooks ———
 const [viewProtocolId, setViewProtocolId] = useState<string | null>(null);
 
