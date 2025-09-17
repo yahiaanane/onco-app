@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClipboardList, Edit, Trash, Plus, Eye, Search, Filter, Package, Activity, Leaf, FlaskConical, Dumbbell, Moon, Heart, ShieldX } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+
 import { useToast } from "@/hooks/use-toast";
 import type { ProtocolTemplate, InsertProtocolTemplate, ProtocolItem, InsertProtocolItem } from "@shared/schema";
 import { apiRequest } from "@/lib/api";
@@ -36,8 +36,6 @@ const patientProtocolId =
     ? new URLSearchParams(window.location.search).get("patientProtocolId")
     : null;
 const isPatientMode = Boolean(patientProtocolId);
-
-const queryClient = useQueryClient();
 
 // Load the patient protocol + its items when in patient mode
 const { data: patientProtocol } = useQuery({
@@ -117,65 +115,7 @@ const [newDosage, setNewDosage] = useState("");
 const [newFrequency, setNewFrequency] = useState("");
 
 // Load the patient protocol + items when in patient mode
-const { data: patientProtocol } = useQuery({
-  queryKey: ["/api/patient-protocols", patientProtocolId],
-  enabled: !!patientProtocolId,
-  queryFn: async () => {
-    const res = await apiRequest("GET", `/api/patient-protocols/${patientProtocolId}`);
-    return res.json();
-  },
-});
 
-const { data: patientItems } = useQuery({
-  queryKey: ["/api/patient-protocols/items", patientProtocolId],
-  enabled: !!patientProtocolId,
-  queryFn: async () => {
-    const res = await apiRequest("GET", `/api/patient-protocols/${patientProtocolId}/items`);
-    return res.json();
-  },
-});
-
-// Mutations for patient-specific items
-const addPatientItem = useMutation({
-  mutationFn: async (payload: any) => {
-    const res = await apiRequest("POST", "/api/patient-protocol-items", {
-      patientProtocolId,
-      name: payload.name,
-      type: payload.type ?? "supplement",
-      dosage: payload.dosage ?? null,
-      frequency: payload.frequency ?? null,
-      timing: payload.timing ?? null,
-      duration: payload.duration ?? null,
-      category: payload.category ?? null,
-      priority: payload.priority ?? "core",
-      order: payload.order ?? 0,
-    });
-    return res.json();
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["/api/patient-protocols/items", patientProtocolId] });
-  },
-});
-
-const updatePatientItem = useMutation({
-  mutationFn: async ({ id, data }: { id: string; data: any }) => {
-    const res = await apiRequest("PUT", `/api/patient-protocol-items/${id}`, data);
-    return res.json();
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["/api/patient-protocols/items", patientProtocolId] });
-  },
-});
-
-const deletePatientItem = useMutation({
-  mutationFn: async (id: string) => {
-    const res = await apiRequest("DELETE", `/api/patient-protocol-items/${id}`);
-    return res.json();
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["/api/patient-protocols/items", patientProtocolId] });
-  },
-});
   const { data: templates, isLoading } = useQuery<ProtocolTemplate[]>({
     queryKey: ["/api/protocol-templates"],
   });
@@ -387,7 +327,7 @@ const deletePatientItem = useMutation({
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <Header
-        title={patientProtocol ? `Patient Protocol: ${patientProtocol.name}` : "Patient Protocol"}
+        title={patient ? `${patient.name} — ${patientProtocol?.name ?? "Protocol"}` : "Patient Protocol"}
         onQuickAdd={() => {
           if (!newName.trim()) return;
           addPatientItem.mutate({ name: newName, type: newType, dosage: newDosage, frequency: newFrequency });
@@ -399,7 +339,7 @@ const deletePatientItem = useMutation({
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-foreground">
-                {patientProtocol?.name ?? "Patient Protocol"}
+                {patient ? `${patient.name} — ${patientProtocol?.name ?? "Protocol"}` : "Patient Protocol"}
               </h3>
               {patientProtocol && (
                 <p className="text-sm text-muted-foreground">
