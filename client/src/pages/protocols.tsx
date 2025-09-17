@@ -294,7 +294,115 @@ const deletePatientItem = useMutation({
   const formatDate = (dateString: string | Date) => {
     return new Date(dateString).toLocaleDateString();
   };
+  if (patientProtocolId) {
+  // quick-add local state (uses already-imported Input/Select/Button)
+  const [newName, setNewName] = useState("");
+  const [newType, setNewType] = useState<"supplement" | "drug" | "lifestyle">("supplement");
+  const [newDosage, setNewDosage] = useState("");
+  const [newFrequency, setNewFrequency] = useState("");
 
+  const formatDate = (d: string | Date) => new Date(d).toLocaleDateString();
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <Header
+        title={patientProtocol ? `Patient Protocol: ${patientProtocol.name}` : "Patient Protocol"}
+        onQuickAdd={() => {
+          if (!newName.trim()) return;
+          addPatientItem.mutate({ name: newName, type: newType, dosage: newDosage, frequency: newFrequency });
+          setNewName(""); setNewDosage(""); setNewFrequency("");
+        }}
+      />
+      <main className="flex-1 overflow-y-auto p-6">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">
+                {patientProtocol?.name ?? "Patient Protocol"}
+              </h3>
+              {patientProtocol && (
+                <p className="text-sm text-muted-foreground">
+                  Status: <b>{patientProtocol.status}</b> • Start: {formatDate(patientProtocol.startDate)}
+                  {patientProtocol.endDate && <> • End: {formatDate(patientProtocol.endDate)}</>}
+                </p>
+              )}
+            </div>
+            <Button variant="outline" onClick={() => { window.location.href = "/protocols"; }}>
+              Back to Templates
+            </Button>
+          </div>
+
+          {/* Quick add row */}
+          <div className="flex flex-wrap gap-2 items-center">
+            <Input placeholder="name" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-64" />
+            <Select value={newType} onValueChange={(v) => setNewType(v as any)}>
+              <SelectTrigger className="w-40"><SelectValue placeholder="type" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="supplement">Supplement</SelectItem>
+                <SelectItem value="drug">Drug</SelectItem>
+                <SelectItem value="lifestyle">Lifestyle</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input placeholder="dosage" value={newDosage} onChange={(e) => setNewDosage(e.target.value)} className="w-40" />
+            <Input placeholder="frequency" value={newFrequency} onChange={(e) => setNewFrequency(e.target.value)} className="w-40" />
+            <Button
+              onClick={() => {
+                if (!newName.trim()) return;
+                addPatientItem.mutate({ name: newName, type: newType, dosage: newDosage, frequency: newFrequency });
+                setNewName(""); setNewDosage(""); setNewFrequency("");
+              }}
+            >
+              Add Item
+            </Button>
+          </div>
+
+          {/* Items grid */}
+          {!patientItems ? (
+            <div className="text-center py-12">
+              <div className="text-lg text-muted-foreground">Loading protocol items...</div>
+            </div>
+          ) : patientItems.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <div className="text-muted-foreground">
+                  <p className="text-lg mb-2">No items yet</p>
+                  <p className="text-sm">Use the quick add row above to add the first item</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {patientItems.map((it: any) => (
+                <Card key={it.id} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <h5 className="font-medium text-foreground text-sm">{it.name}</h5>
+                      <div className="flex items-center space-x-1">
+                        <Button size="sm" variant="ghost" onClick={() => {
+                          const name = prompt("Name", it.name) ?? it.name;
+                          const dosage = prompt("Dosage", it.dosage ?? "") ?? it.dosage ?? "";
+                          const frequency = prompt("Frequency", it.frequency ?? "") ?? it.frequency ?? "";
+                          updatePatientItem.mutate({ id: it.id, data: { name, dosage: dosage || null, frequency: frequency || null } });
+                        }}>
+                          Edit
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => deletePatientItem.mutate(it.id)}>
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                    {it.dosage && <p className="text-xs text-muted-foreground mb-1"><b>Dosage:</b> {it.dosage}</p>}
+                    {it.frequency && <p className="text-xs text-muted-foreground"><b>Frequency:</b> {it.frequency}</p>}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <Header 
