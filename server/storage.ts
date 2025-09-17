@@ -258,6 +258,14 @@ export class DatabaseStorage implements IStorage {
       .set(updateProtocol)
       .where(eq(patientProtocols.id, id))
       .returning();
+
+    async deletePatientProtocol(id: string): Promise<boolean> {
+  const deleted = await db
+    .delete(patientProtocols)
+    .where(eq(patientProtocols.id, id))
+    .returning({ id: patientProtocols.id }); // Drizzle returns rows; length > 0 means success
+  return deleted.length > 0;
+}
     
     if (protocol && updateProtocol.status) {
       await this.createTimelineEntry({
@@ -271,6 +279,7 @@ export class DatabaseStorage implements IStorage {
 
     return protocol || undefined;
   }
+  
 
   // Patient protocol item methods
   async getPatientProtocolItems(patientProtocolId: string): Promise<PatientProtocolItem[]> {
