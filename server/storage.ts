@@ -29,7 +29,9 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, like, sql } from "drizzle-orm";
-
+import { eq } from "drizzle-orm";
+import { db } from "./db";
+import { patientProtocols } from "@shared/schema";
 export interface IStorage {
   // User methods
   getUser(id: string): Promise<User | undefined>;
@@ -67,6 +69,17 @@ export interface IStorage {
   const result = await db.delete(patientProtocols).where(eq(patientProtocols.id, id));
   return (result.rowCount ?? 0) > 0;
 }
+
+// Unassign a protocol from a patient (does NOT delete the template)
+async deletePatientProtocol(id: string): Promise<boolean> {
+  // rely on ON DELETE CASCADE for related items/adherence (your schema uses cascade)
+  const deleted = await db
+    .delete(patientProtocols)
+    .where(eq(patientProtocols.id, id))
+    .returning({ id: patientProtocols.id }); // Drizzle returns rows; length > 0 means success
+  return deleted.length > 0;
+}
+
   // Patient protocol item methods
   getPatientProtocolItems(patientProtocolId: string): Promise<PatientProtocolItem[]>;
   createPatientProtocolItem(item: InsertPatientProtocolItem): Promise<PatientProtocolItem>;
