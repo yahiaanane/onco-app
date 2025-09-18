@@ -31,6 +31,39 @@ export default function Protocols() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 // —— Patient-specific mode (no router hooks) ——
+ // Patient item dialog state
+const [showPatientItemDialog, setShowPatientItemDialog] = useState(false);
+const [selectedPatientItem, setSelectedPatientItem] = useState<any | null>(null);
+
+// Create / Update for patient protocol items (re-using the same shape as template form)
+const createPatientItemMutation = useMutation({
+  mutationFn: async (payload: any) => {
+    // payload will come from ProtocolItemForm; we just inject patientProtocolId
+    const res = await apiRequest("POST", "/api/patient-protocol-items", {
+      ...payload,
+      patientProtocolId, // tie to the patient’s protocol
+    });
+    return res.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/patient-protocols/items", patientProtocolId] });
+    setShowPatientItemDialog(false);
+    setSelectedPatientItem(null);
+  },
+});
+
+const updatePatientItemMutation = useMutation({
+  mutationFn: async ({ id, data }: { id: string; data: any }) => {
+    const res = await apiRequest("PUT", `/api/patient-protocol-items/${id}`, data);
+    return res.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/patient-protocols/items", patientProtocolId] });
+    setShowPatientItemDialog(false);
+    setSelectedPatientItem(null);
+  },
+});
+  
 const patientProtocolId =
   typeof window !== "undefined"
     ? new URLSearchParams(window.location.search).get("patientProtocolId")
