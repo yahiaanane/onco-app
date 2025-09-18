@@ -258,28 +258,33 @@ app.post("/api/patient-protocols", async (req, res) => {
 
   app.post("/api/patient-protocol-items", async (req, res) => {
   try {
-    const body = req.body ?? {};
-    const candidate = {
-      patientProtocolId: body.patientProtocolId,
-      name: body.name,
-      type: body.type ?? "supplement",
-      category: body.category ?? null,
-      priority: body.priority ?? "core",
-      dosage: body.dosage ?? null,
-      frequency: body.frequency ?? null,
-      timing: body.timing ?? null,
-      duration: body.duration ?? null,
-      rationale: body.rationale ?? null,
-      cautions: body.cautions ?? null,
-      instructions: body.instructions ?? null,
-      foodRequirement: body.foodRequirement ?? null,
-      order: body.order ?? 0,
-    };
-    const itemData = insertPatientProtocolItemSchema.parse(candidate);
-    const item = await storage.createPatientProtocolItem(itemData);
+    // Accept minimal input and provide safe defaults. This avoids 400s on simple adds.
+    const MinimalItem = z.object({
+      patientProtocolId: z.string().uuid(),
+      name: z.string().trim().min(1),
+      type: z.enum(["supplement", "drug", "lifestyle"]).default("supplement"),
+      category: z.string().trim().min(1).optional().nullable().default(null),
+      priority: z.enum(["core", "optional"]).default("core"),
+      dosage: z.string().optional().nullable().default(null),
+      frequency: z.string().optional().nullable().default(null),
+      timing: z.string().optional().nullable().default(null),
+      duration: z.string().optional().nullable().default(null),
+      rationale: z.string().optional().nullable().default(null),
+      cautions: z.string().optional().nullable().default(null),
+      instructions: z.string().optional().nullable().default(null),
+      foodRequirement: z.string().optional().nullable().default(null),
+      order: z.coerce.number().int().min(0).default(0),
+    });
+
+    // Build candidate from body and parse with minimal schema
+    const candidate = MinimalItem.parse(req.body ?? {});
+
+    // Persist
+    const item = await storage.createPatientProtocolItem(candidate);
     res.status(201).json(item);
   } catch (error) {
     if (error instanceof z.ZodError) {
+      // Surface exact reason to help debugging if anything else is off
       return res.status(400).json({ message: "Invalid item data", errors: error.errors });
     }
     res.status(500).json({ message: "Failed to create protocol item" });
