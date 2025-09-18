@@ -345,9 +345,12 @@ const [newFrequency, setNewFrequency] = useState("");
     return matchesSearch && matchesCategory && matchesPriority;
   }) || [];
 
-  const formatDate = (dateString: string | Date) => {
-    return new Date(dateString).toLocaleDateString();
+   const formatDate = (d?: string | Date | null) => {
+    if (!d) return "-";
+    const dt = new Date(d);
+    return Number.isNaN(dt.getTime()) ? "-" : dt.toLocaleDateString();
   };
+  
   if (patientProtocolId) {
 
   return (
@@ -355,9 +358,8 @@ const [newFrequency, setNewFrequency] = useState("");
       <Header
         title={patient ? `${patient.name} — ${patientProtocol?.name ?? "Protocol"}` : "Patient Protocol"}
         onQuickAdd={() => {
-          if (!newName.trim()) return;
-          addPatientItem.mutate({ name: newName, type: newType, dosage: newDosage, frequency: newFrequency });
-          setNewName(""); setNewDosage(""); setNewFrequency("");
+          setSelectedPatientItem(null);
+          setShowPatientItemDialog(true);
         }}
       />
       <main className="flex-1 overflow-y-auto p-6">
@@ -365,13 +367,16 @@ const [newFrequency, setNewFrequency] = useState("");
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-foreground">
-                {patient ? `${patient.name} — ${patientProtocol?.name ?? "Protocol"}` : "Patient Protocol"}
+                {(patient && patientProtocol)
+                  ? `${patient.name} — ${patientProtocol.name}`
+                  : (patientProtocol?.name ?? "Patient Protocol")}
               </h3>
               {patientProtocol && (
                 <p className="text-sm text-muted-foreground">
-                  Status: <b>{patientProtocol.status}</b> • Start: {formatDate(patientProtocol.startDate)}
-                  {patientProtocol.endDate && <> • End: {formatDate(patientProtocol.endDate)}</>}
-                </p>
+                  Status: <b>{patientProtocol?.status ?? "-"}</b>{" "}
+                  • Start: {formatDate(patientProtocol?.startDate)}
+                  {patientProtocol?.endDate && <> • End: {formatDate(patientProtocol.endDate)}</>}
+               </p>
               )}
             </div>
             <Button variant="outline" onClick={() => { window.location.href = "/protocols"; }}>
