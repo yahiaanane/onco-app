@@ -419,12 +419,14 @@ const [newFrequency, setNewFrequency] = useState("");
                     <div className="flex items-start justify-between mb-3">
                       <h5 className="font-medium text-foreground text-sm">{it.name}</h5>
                       <div className="flex items-center space-x-1">
-                        <Button size="sm" variant="ghost" onClick={() => {
-                          const name = prompt("Name", it.name) ?? it.name;
-                          const dosage = prompt("Dosage", it.dosage ?? "") ?? it.dosage ?? "";
-                          const frequency = prompt("Frequency", it.frequency ?? "") ?? it.frequency ?? "";
-                          updatePatientItem.mutate({ id: it.id, data: { name, dosage: dosage || null, frequency: frequency || null } });
-                        }}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedPatientItem(it);
+                            setShowPatientItemDialog(true);
+                          }}
+                        >
                           Edit
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => deletePatientItem.mutate(it.id)}>
