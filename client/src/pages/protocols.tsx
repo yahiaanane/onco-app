@@ -379,24 +379,13 @@ const [newFrequency, setNewFrequency] = useState("");
             </Button>
           </div>
 
-          {/* Quick add row */}
-          <div className="flex flex-wrap gap-2 items-center">
-            <Input placeholder="name" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-64" />
-            <Select value={newType} onValueChange={(v) => setNewType(v as any)}>
-              <SelectTrigger className="w-40"><SelectValue placeholder="type" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="supplement">Supplement</SelectItem>
-                <SelectItem value="drug">Drug</SelectItem>
-                <SelectItem value="lifestyle">Lifestyle</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input placeholder="dosage" value={newDosage} onChange={(e) => setNewDosage(e.target.value)} className="w-40" />
-            <Input placeholder="frequency" value={newFrequency} onChange={(e) => setNewFrequency(e.target.value)} className="w-40" />
+          {/* Toolbar (patient mode) */}
+          <div className="flex items-center justify-between">
+            <div />
             <Button
               onClick={() => {
-                if (!newName.trim()) return;
-                addPatientItem.mutate({ name: newName, type: newType, dosage: newDosage, frequency: newFrequency });
-                setNewName(""); setNewDosage(""); setNewFrequency("");
+                setSelectedPatientItem(null);
+                setShowPatientItemDialog(true);
               }}
             >
               Add Item
